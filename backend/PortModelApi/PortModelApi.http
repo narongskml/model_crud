@@ -1,0 +1,43 @@
+@PortModelApi_HostAddress = http://localhost:5137
+
+### Get All PortModelMappings
+GET {{PortModelApi_HostAddress}}/api/PortModelMappings
+Accept: application/json
+
+###
+
+### Get Specific PortModelMapping
+GET {{PortModelApi_HostAddress}}/api/PortModelMappings/ACC001/2024-01-01
+Accept: application/json
+
+###
+
+### Create PortModelMapping
+POST {{PortModelApi_HostAddress}}/api/PortModelMappings
+Content-Type: application/json
+
+{
+  "accnoSleeve": "ACC001",
+  "effectiveDate": "2024-01-01",
+  "modelName": "GrowthModel_V1",
+  "currencyModel": "USD",
+  "hedgeModelName": "FullHedge"
+}
+
+###
+
+### Update PortModelMapping
+PUT {{PortModelApi_HostAddress}}/api/PortModelMappings/ACC001/2024-01-01
+Content-Type: application/json
+
+{
+  "modelName": "GrowthModel_V2",
+  "currencyModel": "USD",
+  "hedgeModelName": "PartialHedge"
+}
+
+###
+
+### Delete PortModelMapping
+DELETE {{PortModelApi_HostAddress}}/api/PortModelMappings/ACC001/2024-01-01
+Accept: application/json

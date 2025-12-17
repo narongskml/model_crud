@@ -1,0 +1,187 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
+using PortModelApi.Data;
+using PortModelApi.Models;
+using PortModelApi.Services;
+using System.Reflection;
+
+namespace PortModelApi.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class PortModelMappingsController : ControllerBase
+{
+    private readonly AppDbContext _context;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ILogger<PortModelMappingsController> _logger;
+    private readonly IColumnLengthProvider _columnLengthProvider;
+
+    public PortModelMappingsController(
+        AppDbContext context,
+        IHttpContextAccessor httpContextAccessor,
+        ILogger<PortModelMappingsController> logger,
+        IColumnLengthProvider columnLengthProvider)
+    {
+        _context = context;
+        _httpContextAccessor = httpContextAccessor;
+        _logger = logger;
+        _columnLengthProvider = columnLengthProvider;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<PortModelMapping>>> GetRecords()
+    {
+        return await _context.PortModelMappings.ToListAsync();
+    }
+
+    [HttpGet("{accno}/{date}")]
+    public async Task<ActionResult<PortModelMapping>> GetRecord(string accno, DateOnly date)
+    {
+        var record = await _context.PortModelMappings.FindAsync(accno, date);
+        if (record == null || record.IsDeleted) return NotFound();
+        return record;
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateRecord(PortModelMapping record)
+    {
+        _logger.LogInformation("Creating record for {AccnoSleeve} on {EffectiveDate} by {User}", record.AccnoSleeve, record.EffectiveDate, _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "system");
+        // Validate Portfolio
+        if (!await _context.Portfolios.AnyAsync(p => p.Code == record.AccnoSleeve))
+        {
+            return BadRequest(new { message = $"Portfolio '{record.AccnoSleeve}' does not exist in 'dro.Portfolio'." });
+        }
+
+        var user = _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "system";
+        record.CreatedBy = user;
+        record.CreatedAt = DateTime.UtcNow;
+        record.IsDeleted = false;
+
+        var warnings = await TruncateStringPropertiesAsync(record);
+
+        _context.PortModelMappings.Add(record);
+
+        try
+        {
+            await _context.SaveChangesAsync();
+            await LogAudit(record, "I", user);
+
+            var responseBody = new { record, warnings };
+            return CreatedAtAction(nameof(GetRecord), new { accno = record.AccnoSleeve, date = record.EffectiveDate }, responseBody);
+        }
+        catch (DbUpdateException ex)
+        {
+            // SQL Server duplicate key errors: 2627 (violation of primary key/unique), 2601 (unique index)
+            if (ex.InnerException is SqlException sqlEx && (sqlEx.Number == 2627 || sqlEx.Number == 2601))
+            {
+                _logger.LogWarning(ex, "Duplicate insert attempted for {AccnoSleeve} on {EffectiveDate}", record.AccnoSleeve, record.EffectiveDate);
+                return Conflict(new { message = "Record already exists." }); // short, clean message
+            }
+
+            _logger.LogError(ex, "Database update failed while creating record for {AccnoSleeve}", record.AccnoSleeve);
+            return StatusCode(500, new { message = "Database error." });
+        }
+    }
+
+    [HttpPut("{accno}/{date}")]
+    public async Task<IActionResult> UpdateRecord(string accno, DateOnly date, PortModelMapping update)
+    {
+        _logger.LogInformation("Updating record for {AccnoSleeve} on {EffectiveDate}", accno, date);
+        var existing = await _context.PortModelMappings.FindAsync(accno, date);
+        if (existing == null || existing.IsDeleted) return NotFound();
+
+        var user = _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "system";
+        existing.ModelName = update.ModelName;
+        existing.CurrencyModel = update.CurrencyModel;
+        existing.HedgeModelName = update.HedgeModelName;
+        existing.UpdatedBy = user;
+        existing.UpdatedAt = DateTime.UtcNow;
+
+        var warnings = await TruncateStringPropertiesAsync(existing);
+
+        await _context.SaveChangesAsync();
+        await LogAudit(existing, "U", user);
+
+        if (warnings.Count > 0)
+            return Ok(new { record = existing, warnings });
+
+        return NoContent();
+    }
+
+    [HttpDelete("{accno}/{date}")]
+    public async Task<IActionResult> DeleteRecord(string accno, DateOnly date)
+    {
+        _logger.LogInformation("Deleting record for {AccnoSleeve} on {EffectiveDate}", accno, date);
+        var record = await _context.PortModelMappings.FindAsync(accno, date);
+        if (record == null || record.IsDeleted) return NotFound();
+
+        var user = _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "system";
+        record.IsDeleted = true;
+        record.UpdatedBy = user;
+        record.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        await LogAudit(record, "D", user);
+        return NoContent();
+    }
+
+    private async Task LogAudit(PortModelMapping record, string action, string user)
+    {
+        try
+        {
+            var sql = @"
+                INSERT INTO crd.port_model_mapping_audit 
+                (accno_sleeve, effectivedate, model_name, currency_model, hedge_model_name, action, changed_by, changed_at)
+                VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7})";
+
+            await _context.Database.ExecuteSqlRawAsync(sql,
+                record.AccnoSleeve,
+                record.EffectiveDate,
+                record.ModelName,
+                record.CurrencyModel ?? (object)DBNull.Value,
+                record.HedgeModelName ?? (object)DBNull.Value,
+                action,
+                user,
+                DateTime.UtcNow);
+
+            _logger.LogInformation("Audit log created for action {Action}", action);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to log audit");
+        }
+    }
+
+    private async Task<List<string>> TruncateStringPropertiesAsync(PortModelMapping record, CancellationToken ct = default)
+    {
+        var warnings = new List<string>();
+        var propertiesToCheck = new[] { "AccnoSleeve", "ModelName", "CurrencyModel", "HedgeModelName", "CreatedBy", "UpdatedBy" };
+        const int fallbackDefault = 255;
+
+        foreach (var propName in propertiesToCheck)
+        {
+            var pi = typeof(PortModelMapping).GetProperty(propName, BindingFlags.Public | BindingFlags.Instance);
+            if (pi == null || pi.PropertyType != typeof(string)) continue;
+
+            var current = (string?)pi.GetValue(record);
+            if (string.IsNullOrEmpty(current)) continue;
+
+            var maxLen = await _columnLengthProvider.GetMaxLengthAsync(typeof(PortModelMapping), propName, ct);
+            int effectiveMax = maxLen ?? fallbackDefault;
+
+            if (current.Length > effectiveMax)
+            {
+                var truncated = current.Substring(0, effectiveMax);
+                pi.SetValue(record, truncated);
+
+                if (maxLen.HasValue)
+                    warnings.Add($"{propName} truncated to {maxLen.Value} characters.");
+                else
+                    warnings.Add($"{propName} exceeded {effectiveMax} characters and was truncated (no EF/DB max-length metadata; default used).");
+            }
+        }
+
+        return warnings;
+    }
+}

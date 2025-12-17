@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backend", "backend", "{1AE8ACA6-933B-BF2A-3671-3E2EAC007D16}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PortModelApi", "backend\PortModelApi\PortModelApi.csproj", "{82F96364-1B02-084A-07A3-A15F6773FBFC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{82F96364-1B02-084A-07A3-A15F6773FBFC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82F96364-1B02-084A-07A3-A15F6773FBFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82F96364-1B02-084A-07A3-A15F6773FBFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82F96364-1B02-084A-07A3-A15F6773FBFC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{82F96364-1B02-084A-07A3-A15F6773FBFC} = {1AE8ACA6-933B-BF2A-3671-3E2EAC007D16}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AB7B16A3-F628-41F4-9122-AAA3856ED33A}
+	EndGlobalSection
+EndGlobal

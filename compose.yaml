@@ -1,0 +1,36 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "5137:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=host.containers.internal,1433;Database=PortModelDB;User Id=sa;Password=YourPassword123!;TrustServerCertificate=True;
+      - Keycloak__Authority=http://host.containers.internal:8080/realms/model_crud
+      - Keycloak__ClientId=backend-api
+      - Keycloak__ClientSecret=${KEYCLOAK_CLIENT_SECRET}
+    extra_hosts:
+      - "host.containers.internal:host-gateway"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:3000"
+    environment:
+      - ORIGIN=http://localhost:5173
+      # In container, frontend talks to backend directly or via browser?
+      # For server-side fetch (load functions), it needs internal access:
+      # For browser-side fetch, it needs public access.
+      # The SvelteKit API client in this app is browser-based (client-side fetch).
+      # However, if any SSR happens, it needs access.
+      # Since we hardcoded API_BASE in src/lib/api.ts to localhost:5137, 
+      # it works for the browser user if backend is mapped to 5137.
+    depends_on:
+      - backend
+
+# Note: Keycloak and SQL Server are assumed to be running on the host 
+# or in another stack, hence host.containers.internal usage.

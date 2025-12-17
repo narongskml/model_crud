@@ -1,0 +1,116 @@
+[
+  {
+    "ContainingType": "PortModelApi.Controllers.PortModelMappingsController",
+    "Method": "GetRecords",
+    "RelativePath": "api/PortModelMappings",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[PortModelApi.Models.PortModelMapping, PortModelApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "PortModelApi.Controllers.PortModelMappingsController",
+    "Method": "CreateRecord",
+    "RelativePath": "api/PortModelMappings",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "record",
+        "Type": "PortModelApi.Models.PortModelMapping",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PortModelApi.Controllers.PortModelMappingsController",
+    "Method": "GetRecord",
+    "RelativePath": "api/PortModelMappings/{accno}/{date}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "accno",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "date",
+        "Type": "System.DateOnly",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "PortModelApi.Models.PortModelMapping",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "PortModelApi.Controllers.PortModelMappingsController",
+    "Method": "UpdateRecord",
+    "RelativePath": "api/PortModelMappings/{accno}/{date}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "accno",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "date",
+        "Type": "System.DateOnly",
+        "IsRequired": true
+      },
+      {
+        "Name": "update",
+        "Type": "PortModelApi.Models.PortModelMapping",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PortModelApi.Controllers.PortModelMappingsController",
+    "Method": "DeleteRecord",
+    "RelativePath": "api/PortModelMappings/{accno}/{date}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "accno",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "date",
+        "Type": "System.DateOnly",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  }
+]
