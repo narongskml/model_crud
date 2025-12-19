@@ -6,10 +6,13 @@ A modern, user-friendly frontend application for managing Port Model Mappings. B
 
 -   **Dashboard View**: View all port model mappings in a responsive table.
 -   **Search & Filter**: Real-time filtering by Account Sleeve or Model Name.
+-   **Excel Portability**: Export current mappings to Excel or bulk import from standardized templates.
 -   **Create Mapping**: Form to create new portfolio assignments with validation.
 -   **Edit Mapping**: Update existing mappings (primary keys are immutable).
 -   **Audit History**: View a history of changes for each record.
--   **Authentication**: Secure login system.
+-   **Authentication**: Secure login system via Keycloak.
+-   **Dark Mode Support**: Native dark mode for eye comfort.
+-   **Dynamic Typography**: Adjustable font sizes for improved accessibility.
 -   **Data Validation**: Form validation and error handling with user-friendly alerts.
 
 ## User Guide

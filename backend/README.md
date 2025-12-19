@@ -29,7 +29,9 @@ A .NET 8 Web API for managing portfolio security models and currency hedging mod
 - Authenticate users via Keycloak (JWT)
 - Read portfolio lists
 - Create, read, update, delete portfolio models (security and hedging models)
+- **Excel Import**: Bulk upload model definitions from Excel files (`/api/PortModelMappings/import`)
 - Provide audit history for models
+- **Automatic Schema Management**: Self-healing database setup and migrations on startup
 
 The project uses Entity Framework Core for database access and SQL Server as the primary datastore.
 
@@ -39,6 +41,7 @@ The project uses Entity Framework Core for database access and SQL Server as the
 
 - ASP.NET Core 8 Web API
 - Entity Framework Core (SQL Server)
+- **Database Initializer Service**: Automatically handles schema creation (`crd` schema), table creation, indexing, and column migrations.
 - Keycloak for authentication and token issuance
 - CORS policy configured to allow the frontend origin (configurable via `Cors:AllowedOrigins`)
 - Swagger for interactive API documentation

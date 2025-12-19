@@ -10,6 +10,7 @@ A comprehensive fund management application for managing portfolio security mode
 - [Technology Stack](#technology-stack)
 - [Getting Started](#getting-started)
 - [Running the Application](#running-the-application)
+- [Screenshots](#screenshots)
 - [User Guide for Fund Managers](#user-guide-for-fund-managers)
 - [Configuration](#configuration)
 
@@ -38,55 +39,47 @@ model_crud/
 ├── backend/                          # .NET 8 API Server
 │   ├── PortModelApi/
 │   │   ├── Controllers/
-│   │   │   ├── AuthController.cs          # Authentication endpoints
-│   │   │   ├── PortfoliosController.cs    # Portfolio data endpoints
-│   │   │   ├── PortModelMappingsController.cs   # Security model CRUD
-│   │   │   └── PortModelMappingAuditsController.cs  # Audit history
+│   │   │   ├── AuthController.cs          # Authentication & Login
+│   │   │   ├── PortfoliosController.cs    # Portfolio Lookups
+│   │   │   ├── PortModelMappingsController.cs   # Model CRUD & Excel Logic
+│   │   │   └── PortModelMappingAuditsController.cs  # Audit Trail
 │   │   ├── Data/
-│   │   │   └── AppDbContext.cs            # Database context (EF Core)
+│   │   │   └── AppDbContext.cs            # EF Core Data Context
 │   │   ├── Models/
-│   │   │   ├── Portfolio.cs               # Portfolio entity
-│   │   │   ├── PortModelMapping.cs        # Model mapping entity
-│   │   │   ├── PortModelMappingAudit.cs   # Audit log entity
-│   │   │   └── LoginRequest.cs            # Auth request DTO
+│   │   │   ├── Portfolio.cs               # Portfolio Entity
+│   │   │   ├── PortModelMapping.cs        # Main Model Entity
+│   │   │   ├── PortModelMappingAudit.cs   # Audit Log Entity
+│   │   │   └── LoginRequest.cs            # Auth DTO
 │   │   ├── Services/
-│   │   │   └── ColumnLengthProvider.cs    # Data validation service
-│   │   ├── Program.cs                     # App configuration & middleware
-│   │   ├── appsettings.json               # Production config
-│   │   ├── appsettings.Development.json   # Development config
-│   │   ├── Dockerfile                     # Docker image definition
-│   │   └── PortModelApi.csproj            # .NET project file
-│   ├── PortModelApi.Tests/                # Unit tests
-│   ├── backend.sln                        # Backend solution
-│   └── table.sql                          # Database schema
+│   │   │   ├── ColumnLengthProvider.cs    # Metadata/Validation Service
+│   │   │   └── DatabaseInitializer.cs     # Auto-Schema Migration Service
+│   │   ├── Program.cs                     # App Entry & Middleware
+│   │   ├── appsettings.json               # Configuration
+│   │   └── PortModelApi.csproj            # Project File
+│   ├── backend.sln                        # Backend Solution
+│   └── table.sql                          # Database Schema (Reference)
 │
 ├── frontend/                         # SvelteKit Web Application
 │   ├── src/
 │   │   ├── lib/
-│   │   │   ├── api.ts                     # API client service
-│   │   │   ├── auth.ts                    # Authentication store
-│   │   │   ├── types.ts                   # TypeScript types/interfaces
-│   │   │   └── components/                # Reusable UI components
+│   │   │   ├── api.ts                     # API Client
+│   │   │   ├── auth.ts                    # Auth Management
+│   │   │   ├── settings.svelte.ts         # Dark Mode & Font Size State
+│   │   │   └── components/                # UI Components
 │   │   ├── routes/
-│   │   │   ├── +layout.svelte             # App layout
-│   │   │   ├── +page.svelte               # Dashboard page
-│   │   │   ├── login/                     # Login page
-│   │   │   ├── create/                    # Create model page
-│   │   │   └── edit/                      # Edit model page
-│   │   ├── app.html                       # HTML template
-│   │   └── app.css                        # Global styles
-│   ├── .env.development                   # Dev environment variables
-│   ├── .env.production                    # Prod environment variables
-│   ├── vite.config.ts                     # Vite build config
-│   ├── tailwind.config.js                 # Tailwind CSS config
-│   ├── Dockerfile                         # Docker image definition
-│   ├── package.json                       # Node dependencies
-│   └── tsconfig.json                      # TypeScript config
+│   │   │   ├── +layout.svelte             # Main Shell & Theme Wrapper
+│   │   │   ├── +page.svelte               # Dashboard & Model List
+│   │   │   ├── login/                     # Login Page
+│   │   │   ├── create/                    # Model Creation
+│   │   │   ├── edit/                      # Model Editing
+│   │   │   └── help/                      # Documentation & Help
+│   ├── tailwind.config.js                 # Styling Configuration
+│   ├── package.json                       # Dependencies
+│   └── vite.config.ts                     # Build Pipeline
 │
-├── compose.yaml                      # Docker Compose orchestration
-├── compose.bat                        # Windows helper script
-├── keycloak.bat                       # Keycloak setup script
-└── model_crud.sln                     # Main solution file
+├── compose.yaml                      # Docker Orchestration
+├── compose.bat                        # Windows Start Script
+└── keycloak.bat                       # Identity Provider Setup
 ```
 
 ---
@@ -167,7 +160,17 @@ model_crud/
 - Track multiple hedging models per portfolio
 - Version control with effective dates
 
-### 3. **Audit Trail & Compliance**
+### 3. **Excel Integration & Portability**
+- **Bulk Import**: Quickly upload model definitions from Excel templates.
+- **Data Export**: Export current model listings and audit trails directly to `.xlsx` format for reporting or offline analysis.
+- **Template-Based**: Ensures data consistency through standardized Excel structures.
+
+### 4. **Aesthetics & Accessibility**
+- **Dark Mode**: Fully supports native dark mode for reduced eye strain.
+- **Dynamic Font Sizing**: User-adjustable font sizes for better readability across different displays.
+- **Premium UI**: Modern, glassmorphism-inspired design with smooth transitions.
+
+### 5. **Audit Trail & Compliance**
 - **Automatic logging** of all changes:
   - Who made the change (User ID)
   - When it was made (Timestamp)
@@ -179,7 +182,7 @@ model_crud/
   - Immutable historical records
   - Regulatory reporting support
 
-### 4. **Security & Authentication**
+### 6. **Security & Authentication**
 - **Keycloak Integration** (OAuth 2.0 / OpenID Connect):
   - Centralized user management
   - Role-based access control (RBAC)
@@ -191,12 +194,35 @@ model_crud/
   - Token-based authorization on all endpoints
   - Automatic token refresh
 
-### 5. **User-Friendly Interface**
+### 7. **User-Friendly Interface**
 - Dashboard with model overview
 - Inline create/edit forms
 - Responsive design (mobile-friendly)
 - Real-time validation
 - Confirmation dialogs for destructive operations
+
+---
+
+## Screenshots
+
+### Dashboard & Overview
+![Dashboard](screen_shot1.jpg)
+
+### Authentication
+![Login Light](screen_shot1_login.jpg)
+![Login Dark](screen_shot1_login_dark.jpg)
+
+### Model Management (CRUD)
+![Create Model](screen_shot1_create.jpg)
+![Update Model](screen_shot1_update.jpg)
+![Delete Model](screen_shot1_delete.jpg)
+
+### Audit Trail
+![View Audit History](screen_shot1_viewlog.jpg)
+
+### Data Operations
+![Import Excel](screen_shot_import_Excel.jpg)
+![Export Excel](screen_shot_export_Excel.jpg)
 
 ---
 
@@ -249,10 +275,23 @@ cd d:\projects\model_crud
 ```
 
 #### 2. Database Setup
+
+The backend API is equipped with a **Database Initializer** that automatically sets up the environment on startup. It will:
+- Verify the connection to SQL Server.
+- Create the `crd` schema if it doesn't exist.
+- Create all required tables (`port_model_mapping`, `port_model_mapping_audit`).
+- Create necessary indices for performance.
+- Automatically migrate/add columns if the schema is updated.
+
+**Manual Setup (Optional Reference):**
+If you prefer to see the schema or run it manually:
 ```bash
-# Execute SQL schema
-sqlcmd -S TOMNB -d model_crud_db -i backend/table.sql
+# Execute SQL schema manually
+sqlcmd -S <YourServer> -d <YourDatabase> -i backend/table.sql
 ```
+
+> [!NOTE]
+> Ensure your connection string in `backend/PortModelApi/appsettings.Development.json` is correct before running the backend.
 
 #### 3. Configure Backend (appsettings files already configured)
 - Database connection in `backend/PortModelApi/appsettings.Development.json`

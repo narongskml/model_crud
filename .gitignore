@@ -1,3 +1,7 @@
-# Ignore Visual Studio workspace and temporary files
+# Ignore Visual Studio and VS Code workspace files
 .vs/
+.vscode/
 
+# Backend Build Outputs
+backend/PortModelApi/bin/
+backend/PortModelApi/obj/
