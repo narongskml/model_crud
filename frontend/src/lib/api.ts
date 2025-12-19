@@ -82,6 +82,27 @@ export const api = {
         const res = await fetch(`${API_BASE}/PortModelMappingAudits/${accno}/${date}`, { headers: getHeaders() });
         if (!res.ok) throw new Error('Failed to fetch audit history');
         return res.json();
+    },
+
+    async importExcel(file: File): Promise<{ totalRows: number, created: number, updated: number, errors: string[] }> {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // When sending FormData, we must NOT set Content-Type manually
+        const h = getHeaders();
+        const { 'Content-Type': _, ...headers } = h as any;
+
+        const res = await fetch(`${API_BASE}/PortModelMappings/import`, {
+            method: 'POST',
+            headers,
+            body: formData
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ message: 'Failed to upload file' }));
+            throw new Error(err.message || 'Import failed');
+        }
+        return res.json();
     }
 };
 

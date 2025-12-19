@@ -201,6 +201,140 @@ public class PortModelMappingsController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("import")]
+    public async Task<IActionResult> ImportExcel(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "No file uploaded." });
+
+        if (!Path.GetExtension(file.FileName).Equals(".xlsx", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { message = "Only .xlsx files are supported." });
+
+        var user = GetCurrentUser();
+        var now = GetConfiguredNow();
+        var results = new
+        {
+            TotalRows = 0,
+            Created = 0,
+            Updated = 0,
+            Errors = new List<string>()
+        };
+
+        try
+        {
+            using var stream = file.OpenReadStream();
+            using var workbook = new ClosedXML.Excel.XLWorkbook(stream);
+            var worksheet = workbook.Worksheets.FirstOrDefault();
+            if (worksheet == null) return BadRequest(new { message = "Workspace is empty." });
+
+            var rows = worksheet.RangeUsed().RowsUsed().Skip(1); // Skip header row
+            int totalRows = 0;
+            int createdCount = 0;
+            int updatedCount = 0;
+            var errorList = new List<string>();
+
+            foreach (var row in rows)
+            {
+                totalRows++;
+                try
+                {
+                    var accnoSleeve = row.Cell(1).GetValue<string>().Trim();
+                    var effectiveDateStr = row.Cell(2).GetValue<string>().Trim();
+                    var modelName = row.Cell(3).GetValue<string>().Trim();
+                    var currencyModel = row.Cell(4).GetValue<string>().Trim();
+                    var hedgeModel = row.Cell(5).GetValue<string>().Trim();
+
+                    if (string.IsNullOrEmpty(accnoSleeve) || string.IsNullOrEmpty(effectiveDateStr) || string.IsNullOrEmpty(modelName))
+                    {
+                        errorList.Add($"Row {row.RowNumber()}: Missing mandatory fields (Account Sleeve, Effective Date, or Model Name).");
+                        continue;
+                    }
+
+                    if (!DateOnly.TryParse(effectiveDateStr, out var effectiveDate))
+                    {
+                        errorList.Add($"Row {row.RowNumber()}: Invalid date format '{effectiveDateStr}'. Use YYYY-MM-DD.");
+                        continue;
+                    }
+
+                    // Check if Portfolio exists
+                    if (!await _context.Portfolios.AnyAsync(p => p.Code == accnoSleeve))
+                    {
+                        errorList.Add($"Row {row.RowNumber()}: Portfolio '{accnoSleeve}' does not exist.");
+                        continue;
+                    }
+
+                    var existing = await _context.PortModelMappings.IgnoreQueryFilters()
+                        .FirstOrDefaultAsync(m => m.AccnoSleeve == accnoSleeve && m.EffectiveDate == effectiveDate);
+
+                    if (existing != null)
+                    {
+                        // Update existing record (active or soft-deleted)
+                        existing.ModelName = modelName;
+                        existing.CurrencyModel = string.IsNullOrEmpty(currencyModel) ? null : currencyModel;
+                        existing.HedgeModelName = string.IsNullOrEmpty(hedgeModel) ? null : hedgeModel;
+                        existing.IsDeleted = false;
+                        existing.UpdatedBy = user;
+                        existing.UpdatedAt = now;
+                        
+                        // If it was deleted, we set who "un-deleted" it
+                        if (existing.DeletedAt.HasValue)
+                        {
+                            existing.CreatedBy = user; // Mark as "re-created" by importer
+                            existing.CreatedAt = now;
+                            existing.DeletedBy = null;
+                            existing.DeletedAt = null;
+                        }
+
+                        await TruncateStringPropertiesAsync(existing);
+                        _context.PortModelMappings.Update(existing);
+                        await LogAudit(existing, "U", user);
+                        updatedCount++;
+                    }
+                    else
+                    {
+                        // Create new record
+                        var newRecord = new PortModelMapping
+                        {
+                            AccnoSleeve = accnoSleeve,
+                            EffectiveDate = effectiveDate,
+                            ModelName = modelName,
+                            CurrencyModel = string.IsNullOrEmpty(currencyModel) ? null : currencyModel,
+                            HedgeModelName = string.IsNullOrEmpty(hedgeModel) ? null : hedgeModel,
+                            IsDeleted = false,
+                            CreatedBy = user,
+                            CreatedAt = now
+                        };
+
+                        await TruncateStringPropertiesAsync(newRecord);
+                        _context.PortModelMappings.Add(newRecord);
+                        await LogAudit(newRecord, "I", user);
+                        createdCount++;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errorList.Add($"Row {row.RowNumber()}: Unexpected error - {ex.Message}");
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Import completed: {Total} processed, {Created} created, {Updated} updated, {Errors} errors", totalRows, createdCount, updatedCount, errorList.Count);
+
+            return Ok(new
+            {
+                TotalRows = totalRows,
+                Created = createdCount,
+                Updated = updatedCount,
+                Errors = errorList
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Excel import failed");
+            return StatusCode(500, new { message = "Failed to process Excel file. Please ensure it follows the export format." });
+        }
+    }
+
     private async Task LogAudit(PortModelMapping record, string action, string user)
     {
         try

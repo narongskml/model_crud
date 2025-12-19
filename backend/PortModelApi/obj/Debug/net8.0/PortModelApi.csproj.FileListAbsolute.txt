@@ -213,3 +213,11 @@ D:\projects\model_crud\backend\PortModelApi\obj\Debug\net8.0\refint\PortModelApi
 D:\projects\model_crud\backend\PortModelApi\obj\Debug\net8.0\PortModelApi.pdb
 D:\projects\model_crud\backend\PortModelApi\obj\Debug\net8.0\PortModelApi.genruntimeconfig.cache
 D:\projects\model_crud\backend\PortModelApi\obj\Debug\net8.0\ref\PortModelApi.dll
+D:\projects\model_crud\backend\PortModelApi\bin\Debug\net8.0\ClosedXML.dll
+D:\projects\model_crud\backend\PortModelApi\bin\Debug\net8.0\ClosedXML.Parser.dll
+D:\projects\model_crud\backend\PortModelApi\bin\Debug\net8.0\DocumentFormat.OpenXml.dll
+D:\projects\model_crud\backend\PortModelApi\bin\Debug\net8.0\DocumentFormat.OpenXml.Framework.dll
+D:\projects\model_crud\backend\PortModelApi\bin\Debug\net8.0\ExcelNumberFormat.dll
+D:\projects\model_crud\backend\PortModelApi\bin\Debug\net8.0\RBush.dll
+D:\projects\model_crud\backend\PortModelApi\bin\Debug\net8.0\SixLabors.Fonts.dll
+D:\projects\model_crud\backend\PortModelApi\bin\Debug\net8.0\System.IO.Packaging.dll

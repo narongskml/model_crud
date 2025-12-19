@@ -14,6 +14,7 @@
         ChevronLeft,
         ChevronRight,
         Search,
+        Upload,
     } from "lucide-svelte";
     import AuditLogModal from "$lib/components/AuditLogModal.svelte";
     import XLSX from "xlsx-js-style";
@@ -30,6 +31,10 @@
     // Audit Modal State
     let showAudit = $state(false);
     let auditRecord = $state<{ accno: string; date: string } | null>(null);
+
+    // Import State
+    let isImporting = $state(false);
+    let fileInput = $state<HTMLInputElement>();
 
     async function loadData() {
         loading = true;
@@ -127,6 +132,32 @@
         XLSX.writeFile(wb, "PortModelMappings.xlsx");
     }
 
+    async function handleImport(event: Event) {
+        const input = event.target as HTMLInputElement;
+        if (!input.files || input.files.length === 0) return;
+
+        const file = input.files[0];
+        isImporting = true;
+        try {
+            const res = await api.importExcel(file);
+            let message = `Import Result:\n- Total Processed: ${res.totalRows}\n- Created: ${res.created}\n- Updated: ${res.updated}`;
+
+            if (res.errors && res.errors.length > 0) {
+                message += `\n\nErrors (${res.errors.length}):\n${res.errors.slice(0, 5).join("\n")}`;
+                if (res.errors.length > 5)
+                    message += `\n...and ${res.errors.length - 5} more errors.`;
+            }
+
+            alert(message);
+            await loadData();
+        } catch (err: any) {
+            alert(err.message);
+        } finally {
+            isImporting = false;
+            input.value = ""; // Reset input
+        }
+    }
+
     // Reset pagination when search query changes
     $effect(() => {
         searchQuery;
@@ -181,7 +212,27 @@
         >
             <Download size={20} />
         </button>
+
         {#if isManager}
+            <input
+                type="file"
+                accept=".xlsx"
+                bind:this={fileInput}
+                onchange={handleImport}
+                class="hidden"
+            />
+            <button
+                onclick={() => fileInput?.click()}
+                disabled={isImporting}
+                class="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50"
+                title="Import Excel"
+            >
+                {#if isImporting}
+                    <Loader2 size={20} class="animate-spin" />
+                {:else}
+                    <Upload size={20} />
+                {/if}
+            </button>
             <a
                 href="/create"
                 class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -356,11 +407,21 @@
                         bind:value={pageSize}
                         class="bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-2 py-1 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all cursor-pointer text-gray-900 dark:text-gray-100"
                     >
-                        <option value={10}>10</option>
-                        <option value={20}>20</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                        <option value={-1}>All</option>
+                        <option value={10} class="bg-white dark:bg-slate-800"
+                            >10</option
+                        >
+                        <option value={20} class="bg-white dark:bg-slate-800"
+                            >20</option
+                        >
+                        <option value={50} class="bg-white dark:bg-slate-800"
+                            >50</option
+                        >
+                        <option value={100} class="bg-white dark:bg-slate-800"
+                            >100</option
+                        >
+                        <option value={-1} class="bg-white dark:bg-slate-800"
+                            >All</option
+                        >
                     </select>
                     <span class="ml-2">
                         Showing {filteredMappings.length > 0

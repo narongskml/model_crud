@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PortModelApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3613bc3e8778544bf7bcc218cb127fc3905d48bd")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bf316d579576f9e6d0ff739d0e4f6191482e777a")]
 [assembly: System.Reflection.AssemblyProductAttribute("PortModelApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PortModelApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

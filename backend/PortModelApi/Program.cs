@@ -114,25 +114,21 @@ try
     {
         using (var scope = app.Services.CreateScope())
         {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            Console.WriteLine("Testing database connection...");
-            db.Database.OpenConnection();
-            db.Database.CloseConnection();
-            Console.WriteLine("Database connection successful!");
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+            var initLogger = scope.ServiceProvider.GetRequiredService<ILogger<DatabaseInitializer>>();
             
-            // Optionally log pending migrations:
-            var pending = db.Database.GetPendingMigrations();
-            if (pending.Any())
-            {
-                Console.WriteLine($"Found {pending.Count()} pending migrations.");
-                // db.Database.Migrate(); // uncomment to auto-apply
-            }
+            // Use DatabaseInitializer to check connection and create tables
+            var dbInitializer = new DatabaseInitializer(configuration, initLogger);
+            dbInitializer.InitializeAsync().GetAwaiter().GetResult();
+            
+            logger.LogInformation("✅ Database initialization completed successfully!");
         }
     });
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"[FATAL] Failed to connect to database after {maxRetries} retries: {ex.Message}");
+    Console.WriteLine($"[FATAL] Database initialization failed after {maxRetries} retries: {ex.Message}");
     throw;
 }
 

@@ -1,0 +1,1 @@
+podman build -t model_crud_frontend:1.0.0 .

@@ -129,7 +129,11 @@
                         class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
                     >
                         {#each portfolios as p}
-                            <option value={p.code}>{p.code} - {p.name}</option>
+                            <option
+                                value={p.code}
+                                class="bg-white dark:bg-slate-800"
+                                >{p.code} - {p.name}</option
+                            >
                         {/each}
                     </select>
                 {:else}
@@ -155,7 +159,7 @@
                     type="date"
                     required
                     bind:value={form.effectiveDate}
-                    class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
                 />
             </div>
 
@@ -170,7 +174,7 @@
                     required
                     maxlength="50"
                     bind:value={form.modelName}
-                    class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
                     placeholder="e.g. GROWTH_STRATEGY"
                 />
             </div>
@@ -183,10 +187,14 @@
                 <select
                     id="currency"
                     bind:value={form.currencyModel}
-                    class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white"
+                    class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
                 >
-                    <option value="A">A - Asset Model</option>
-                    <option value="M">M - Security Model</option>
+                    <option value="A" class="bg-white dark:bg-slate-800"
+                        >A - Asset Model</option
+                    >
+                    <option value="M" class="bg-white dark:bg-slate-800"
+                        >M - Security Model</option
+                    >
                 </select>
             </div>
 
@@ -200,8 +208,8 @@
                     type="text"
                     maxlength="50"
                     bind:value={form.hedgeModelName}
-                    class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                    placeholder="Optional"
+                    class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                    placeholder="e.g. HEDGE_V1"
                 />
             </div>
         </div>
