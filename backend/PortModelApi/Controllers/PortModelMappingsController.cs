@@ -88,14 +88,15 @@ public class PortModelMappingsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateRecord(PortModelMapping record)
     {
-        _logger.LogInformation("Creating record for {AccnoSleeve} on {EffectiveDate} by {User}", record.AccnoSleeve, record.EffectiveDate, _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "system");
+        var user = GetCurrentUser();
+        _logger.LogInformation("Creating record for {AccnoSleeve} on {EffectiveDate} by {User}", record.AccnoSleeve, record.EffectiveDate, user);
         // Validate Portfolio
         if (!await _context.Portfolios.AnyAsync(p => p.Code == record.AccnoSleeve))
         {
             return BadRequest(new { message = $"Portfolio '{record.AccnoSleeve}' does not exist in 'dro.Portfolio'." });
         }
 
-        var user = _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "system";
+
         
         // Check for soft-deleted record with same key; if exists, un-delete and reuse it
         var existing = await _context.PortModelMappings.IgnoreQueryFilters()
@@ -163,7 +164,7 @@ public class PortModelMappingsController : ControllerBase
         var existing = await _context.PortModelMappings.FindAsync(accno, date);
         if (existing == null || existing.IsDeleted) return NotFound();
 
-        var user = _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "system";
+        var user = GetCurrentUser();
         existing.ModelName = update.ModelName;
         existing.CurrencyModel = update.CurrencyModel;
         existing.HedgeModelName = update.HedgeModelName;
@@ -188,7 +189,7 @@ public class PortModelMappingsController : ControllerBase
         var record = await _context.PortModelMappings.FindAsync(accno, date);
         if (record == null || record.IsDeleted) return NotFound();
 
-        var user = _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "system";
+        var user = GetCurrentUser();
         record.IsDeleted = true;
         record.DeletedBy = user;
         record.DeletedAt = GetConfiguredNow();
@@ -257,5 +258,14 @@ public class PortModelMappingsController : ControllerBase
         }
 
         return warnings;
+    }
+
+    private string GetCurrentUser()
+    {
+        if (_httpContextAccessor.HttpContext?.Request.Headers.TryGetValue("X-Requested-By", out var headerUser) == true && !string.IsNullOrWhiteSpace(headerUser))
+        {
+            return headerUser.ToString();
+        }
+        return _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "system";
     }
 }

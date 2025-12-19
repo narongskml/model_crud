@@ -3,6 +3,7 @@
     import type { PortModelMapping } from "$lib/types";
     import { goto } from "$app/navigation";
     import { page } from "$app/stores";
+    import { user } from "$lib/auth";
     import { onMount } from "svelte";
     import { Loader2, ArrowLeft, Save, AlertCircle } from "lucide-svelte";
 
@@ -25,6 +26,14 @@
 
     async function loadRecord() {
         loading = true;
+
+        // Role Check
+        if (!$user?.roles?.includes("model-manager")) {
+            alert("Unauthorized: You do not have permission to edit records.");
+            goto("/");
+            return;
+        }
+
         try {
             const data = await api.getMapping(accno, date);
             form = data;
@@ -61,6 +70,10 @@
     }
 </script>
 
+<svelte:head>
+    <title>Edit - Model Manager</title>
+</svelte:head>
+
 <div class="container mx-auto px-4 py-8 max-w-2xl">
     <div class="mb-8">
         <a
@@ -70,8 +83,12 @@
             <ArrowLeft size={20} />
             Back to Dashboard
         </a>
-        <h1 class="text-3xl font-bold text-gray-900">Edit Model Mapping</h1>
-        <p class="text-gray-500 mt-2">Update existing portfolio assignment.</p>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
+            Edit Model Mapping
+        </h1>
+        <p class="text-gray-500 dark:text-gray-400 mt-2">
+            Update existing portfolio assignment.
+        </p>
     </div>
 
     {#if loading}
@@ -110,13 +127,13 @@
 
         <form
             onsubmit={handleSubmit}
-            class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 space-y-6"
+            class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-8 space-y-6 transition-colors duration-200"
         >
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Primary Keys are Read-Only -->
                 <div class="space-y-2">
                     <label
-                        class="block text-sm font-medium text-gray-700"
+                        class="block text-sm font-medium text-gray-700 dark:text-gray-300"
                         for="accno">Account Sleeve</label
                     >
                     <input
@@ -124,13 +141,13 @@
                         type="text"
                         value={form.accnoSleeve}
                         disabled
-                        class="w-full px-4 py-2 rounded-lg border border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed"
+                        class="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                     />
                 </div>
 
                 <div class="space-y-2">
                     <label
-                        class="block text-sm font-medium text-gray-700"
+                        class="block text-sm font-medium text-gray-700 dark:text-gray-300"
                         for="date">Effective Date</label
                     >
                     <input
@@ -138,13 +155,13 @@
                         type="date"
                         value={form.effectiveDate}
                         disabled
-                        class="w-full px-4 py-2 rounded-lg border border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed"
+                        class="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                     />
                 </div>
 
                 <div class="space-y-2 md:col-span-2">
                     <label
-                        class="block text-sm font-medium text-gray-700"
+                        class="block text-sm font-medium text-gray-700 dark:text-gray-300"
                         for="model">Model Name</label
                     >
                     <input
@@ -153,19 +170,19 @@
                         required
                         maxlength="50"
                         bind:value={form.modelName}
-                        class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                        class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
                     />
                 </div>
 
                 <div class="space-y-2">
                     <label
-                        class="block text-sm font-medium text-gray-700"
+                        class="block text-sm font-medium text-gray-700 dark:text-gray-300"
                         for="currency">Currency Model</label
                     >
                     <select
                         id="currency"
                         bind:value={form.currencyModel}
-                        class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white"
+                        class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
                     >
                         <option value="A">A - Asset Model</option>
                         <option value="M">M - Security Model</option>
@@ -174,7 +191,7 @@
 
                 <div class="space-y-2">
                     <label
-                        class="block text-sm font-medium text-gray-700"
+                        class="block text-sm font-medium text-gray-700 dark:text-gray-300"
                         for="hedge">Hedge Model</label
                     >
                     <input
@@ -182,13 +199,13 @@
                         type="text"
                         maxlength="50"
                         bind:value={form.hedgeModelName}
-                        class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                        class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                     />
                 </div>
 
                 <!-- Metadata Read-Only -->
                 <div
-                    class="space-y-2 md:col-span-2 pt-4 border-t border-gray-100 grid grid-cols-2 gap-4 text-xs text-gray-400"
+                    class="space-y-2 md:col-span-2 pt-4 border-t border-gray-100 dark:border-slate-700 grid grid-cols-2 gap-4 text-xs text-gray-400 dark:text-gray-500"
                 >
                     <div>
                         <p>Created by: {form.createdBy || "-"}</p>
@@ -212,7 +229,7 @@
             <div class="pt-4 flex justify-end gap-3">
                 <a
                     href="/"
-                    class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+                    class="px-6 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 font-medium transition-colors"
                 >
                     Cancel
                 </a>

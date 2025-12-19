@@ -1,8 +1,9 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import { browser } from '$app/environment';
 
 interface User {
     username: string;
+    roles: string[];
 }
 
 const storedToken = browser ? localStorage.getItem('token') : null;
@@ -24,6 +25,10 @@ if (browser) {
 }
 
 export function logout() {
+    const u = get(user);
+    if (u?.username) {
+        console.log(`User ${u.username} logged out`);
+    }
     token.set(null);
     user.set(null);
     if (browser) window.location.href = '/login';

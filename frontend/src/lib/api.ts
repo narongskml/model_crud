@@ -1,19 +1,21 @@
 import type { PortModelMapping, PortModelMappingAudit, CreateResponse } from './types';
 import { get } from 'svelte/store';
-import { token } from './auth';
+import { token, user } from './auth';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5137/api';
 
 function getHeaders() {
     const t = get(token);
+    const u = get(user);
     return {
         'Content-Type': 'application/json',
-        ...(t ? { 'Authorization': `Bearer ${t}` } : {})
+        ...(t ? { 'Authorization': `Bearer ${t}` } : {}),
+        ...(u?.username ? { 'X-Requested-By': u.username } : {})
     };
 }
 
 export const api = {
-    async login(username: string, password: string): Promise<{ token: string, username: string }> {
+    async login(username: string, password: string): Promise<{ token: string, username: string, roles: string[] }> {
         const res = await fetch(`${API_BASE}/Auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

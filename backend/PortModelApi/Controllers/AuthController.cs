@@ -12,17 +12,22 @@ namespace PortModelApi.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IConfiguration _configuration;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IConfiguration configuration)
+    public AuthController(IConfiguration configuration, ILogger<AuthController> logger)
     {
         _configuration = configuration;
+        _logger = logger;
     }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
+        {
+            _logger.LogWarning("Login failed: Username and Password are required");
             return BadRequest("Username and Password are required");
+        }
 
         try
         {
@@ -43,18 +48,53 @@ public class AuthController : ControllerBase
 
             if (!response.IsSuccessStatusCode)
             {
+                _logger.LogWarning("Login failed for user {Username}. Details: {Details}", request.Username, responseString);
                 return Unauthorized(new { message = "Invalid credentials or Keycloak error", details = responseString });
             }
 
-            // Parse token to return consistent format
-            // In a real app, define a class for Keycloak response
-            var json = System.Text.Json.JsonDocument.Parse(responseString);
-            var accessToken = json.RootElement.GetProperty("access_token").GetString();
+            var tokenJson = System.Text.Json.JsonDocument.Parse(responseString);
+            var accessToken = tokenJson.RootElement.GetProperty("access_token").GetString();
 
-            return Ok(new { Token = accessToken, Username = request.Username });
+            // Parse token to return consistent format
+            var handler = new JwtSecurityTokenHandler();
+            var jwtToken = handler.ReadJwtToken(accessToken);
+            
+            // Extract roles from both realm and client
+            var roles = new List<string>();
+            
+            // Extract realm roles
+            var realmAccess = jwtToken.Claims.FirstOrDefault(c => c.Type == "realm_access")?.Value;
+            if (!string.IsNullOrEmpty(realmAccess))
+            {
+                var realmJson = System.Text.Json.JsonDocument.Parse(realmAccess);
+                if (realmJson.RootElement.TryGetProperty("roles", out var realmRolesElement))
+                {
+                    roles.AddRange(realmRolesElement.EnumerateArray().Select(r => r.GetString()!));
+                }
+            }
+            
+            // Extract client roles from resource_access
+            var resourceAccess = jwtToken.Claims.FirstOrDefault(c => c.Type == "resource_access")?.Value;
+            if (!string.IsNullOrEmpty(resourceAccess))
+            {
+                var resourceJson = System.Text.Json.JsonDocument.Parse(resourceAccess);
+                
+                // Iterate through all clients in resource_access
+                foreach (var clientEntry in resourceJson.RootElement.EnumerateObject())
+                {
+                    if (clientEntry.Value.TryGetProperty("roles", out var clientRolesElement))
+                    {
+                        roles.AddRange(clientRolesElement.EnumerateArray().Select(r => r.GetString()!));
+                    }
+                }
+            }
+
+            _logger.LogInformation("User {Username} logged in successfully with roles: {Roles}", request.Username, string.Join(", ", roles));
+            return Ok(new { Token = accessToken, Username = request.Username, Roles = roles });
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Authentication service error for user {Username}", request.Username);
             return StatusCode(500, new { message = "Authentication service error", error = ex.Message });
         }
     }

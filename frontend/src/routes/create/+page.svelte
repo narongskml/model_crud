@@ -14,12 +14,23 @@
         isDeleted: false,
     });
 
+    import { user } from "$lib/auth";
+
     let portfolios = $state<{ code: string; name: string }[]>([]);
     let loading = $state(false);
     let error = $state<string | null>(null);
     let warnings = $state<string[]>([]);
 
     onMount(async () => {
+        // Role Check
+        if (!$user?.roles?.includes("model-manager")) {
+            alert(
+                "Unauthorized: You do not have permission to create records.",
+            );
+            goto("/");
+            return;
+        }
+
         try {
             portfolios = await api.getPortfolios();
             // Default select first if available
@@ -53,6 +64,10 @@
     }
 </script>
 
+<svelte:head>
+    <title>Create New - Model Manager</title>
+</svelte:head>
+
 <div class="container mx-auto px-4 py-8 max-w-2xl">
     <div class="mb-8">
         <a
@@ -62,10 +77,10 @@
             <ArrowLeft size={20} />
             Back to Dashboard
         </a>
-        <h1 class="text-3xl font-bold text-gray-900">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
             Create New Model Mapping
         </h1>
-        <p class="text-gray-500 mt-2">
+        <p class="text-gray-500 dark:text-gray-400 mt-2">
             Define a new portfolio model assignment.
         </p>
     </div>
@@ -98,12 +113,12 @@
 
     <form
         onsubmit={handleSubmit}
-        class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 space-y-6"
+        class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-8 space-y-6 transition-colors duration-200"
     >
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-2">
                 <label
-                    class="block text-sm font-medium text-gray-700"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
                     for="accno">Account Sleeve</label
                 >
                 {#if portfolios.length > 0}
@@ -111,7 +126,7 @@
                         id="accno"
                         required
                         bind:value={form.accnoSleeve}
-                        class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white"
+                        class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
                     >
                         {#each portfolios as p}
                             <option value={p.code}>{p.code} - {p.name}</option>
@@ -124,7 +139,7 @@
                         required
                         maxlength="20"
                         bind:value={form.accnoSleeve}
-                        class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                        class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
                         placeholder="e.g. ACC123"
                     />
                 {/if}
@@ -132,7 +147,7 @@
 
             <div class="space-y-2">
                 <label
-                    class="block text-sm font-medium text-gray-700"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
                     for="date">Effective Date</label
                 >
                 <input
@@ -146,7 +161,7 @@
 
             <div class="space-y-2 md:col-span-2">
                 <label
-                    class="block text-sm font-medium text-gray-700"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
                     for="model">Model Name</label
                 >
                 <input
@@ -162,7 +177,7 @@
 
             <div class="space-y-2">
                 <label
-                    class="block text-sm font-medium text-gray-700"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
                     for="currency">Currency Model</label
                 >
                 <select
@@ -177,7 +192,7 @@
 
             <div class="space-y-2">
                 <label
-                    class="block text-sm font-medium text-gray-700"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
                     for="hedge">Hedge Model</label
                 >
                 <input
@@ -194,7 +209,7 @@
         <div class="pt-4 flex justify-end gap-3">
             <a
                 href="/"
-                class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+                class="px-6 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 font-medium transition-colors"
             >
                 Cancel
             </a>
