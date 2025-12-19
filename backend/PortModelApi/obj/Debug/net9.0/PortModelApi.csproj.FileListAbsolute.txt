@@ -1,8 +1,0 @@
-D:\projects\model_crud\backend\PortModelApi\obj\Debug\net9.0\PortModelApi.csproj.AssemblyReference.cache
-D:\projects\model_crud\backend\PortModelApi\obj\Debug\net9.0\rpswa.dswa.cache.json
-D:\projects\model_crud\backend\PortModelApi\obj\Debug\net9.0\PortModelApi.GeneratedMSBuildEditorConfig.editorconfig
-D:\projects\model_crud\backend\PortModelApi\obj\Debug\net9.0\PortModelApi.AssemblyInfoInputs.cache
-D:\projects\model_crud\backend\PortModelApi\obj\Debug\net9.0\PortModelApi.AssemblyInfo.cs
-D:\projects\model_crud\backend\PortModelApi\obj\Debug\net9.0\PortModelApi.csproj.CoreCompileInputs.cache
-D:\projects\model_crud\backend\PortModelApi\obj\Debug\net9.0\PortModelApi.MvcApplicationPartsAssemblyInfo.cs
-D:\projects\model_crud\backend\PortModelApi\obj\Debug\net9.0\PortModelApi.MvcApplicationPartsAssemblyInfo.cache
