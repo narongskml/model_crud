@@ -16,7 +16,7 @@ public class PortModelMapping
     public DateOnly EffectiveDate { get; set; }
 
     [Column("model_name")]
-    [MaxLength(50)]
+    [MaxLength(100)]
     public string ModelName { get; set; } = default!;
 
     [Column("currency_model")]
@@ -24,7 +24,7 @@ public class PortModelMapping
     public string? CurrencyModel { get; set; }
 
     [Column("hedge_model_name")]
-    [MaxLength(50)]
+    [MaxLength(100)]
     public string? HedgeModelName { get; set; }
 
     // Audit & soft delete
@@ -44,4 +44,11 @@ public class PortModelMapping
 
     [Column("updated_at")]
     public DateTime? UpdatedAt { get; set; }
+
+    [Column("deleted_by")]
+    [MaxLength(50)]
+    public string? DeletedBy { get; set; }
+
+    [Column("deleted_at")]
+    public DateTime? DeletedAt { get; set; }
 }

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Microsoft.Extensions.Configuration;
 using PortModelApi.Controllers;
 using PortModelApi.Data;
 using PortModelApi.Models;
@@ -39,9 +40,15 @@ namespace PortModelApi.Tests
             _mockHttpContextAccessor.Setup(_ => _.HttpContext).Returns(context);
         }
 
-        private async Task<PortModelMappingsController> CreateController(AppDbContext context)
+        private PortModelMappingsController CreateController(AppDbContext context)
         {
-            return new PortModelMappingsController(context, _mockHttpContextAccessor.Object, _mockLogger.Object);
+            var inMemoryConfig = new ConfigurationBuilder()
+                .AddInMemoryCollection(new List<KeyValuePair<string, string?>> { new KeyValuePair<string, string?>("AppSettings:TimeZone", "Asia/Bangkok") })
+                .Build();
+
+            var columnLengthProvider = new PortModelApi.Services.ColumnLengthProvider(context);
+
+            return new PortModelMappingsController(context, _mockHttpContextAccessor.Object, _mockLogger.Object, columnLengthProvider, inMemoryConfig);
         }
 
         [Fact]
@@ -54,7 +61,7 @@ namespace PortModelApi.Tests
             );
             await context.SaveChangesAsync();
 
-            var controller = await CreateController(context);
+            var controller = CreateController(context);
             var result = await controller.GetRecords();
 
             var actionResult = Assert.IsType<ActionResult<IEnumerable<PortModelMapping>>>(result);
@@ -72,7 +79,7 @@ namespace PortModelApi.Tests
             );
             await context.SaveChangesAsync();
 
-            var controller = await CreateController(context);
+            var controller = CreateController(context);
             var result = await controller.GetRecord("A1", new DateOnly(2024, 1, 1));
 
             var actionResult = Assert.IsType<ActionResult<PortModelMapping>>(result);
@@ -85,7 +92,7 @@ namespace PortModelApi.Tests
         public async Task GetRecord_ReturnsNotFound_WhenDoesNotExist()
         {
             using var context = new AppDbContext(_dbContextOptions);
-            var controller = await CreateController(context);
+            var controller = CreateController(context);
             var result = await controller.GetRecord("Invalid", new DateOnly(2024, 1, 1));
 
             Assert.IsType<NotFoundResult>(result.Result);
@@ -95,7 +102,7 @@ namespace PortModelApi.Tests
         public async Task CreateRecord_AddsRecord_AndAuditLogs()
         {
             using var context = new AppDbContext(_dbContextOptions);
-            var controller = await CreateController(context);
+            var controller = CreateController(context);
             
             var newRecord = new PortModelMapping 
             { 
@@ -104,15 +111,19 @@ namespace PortModelApi.Tests
                 ModelName = "M3" 
             };
 
+            // Seed referenced portfolio because controller validates existence
+            context.Portfolios.Add(new PortModelApi.Models.Portfolio { Code = "A3", Name = "Test Portfolio" });
+            await context.SaveChangesAsync();
+
             var result = await controller.CreateRecord(newRecord);
 
             // Verify Record Added
             var createdRecord = await context.PortModelMappings.FindAsync("A3", new DateOnly(2024, 1, 2));
             Assert.NotNull(createdRecord);
-            Assert.Equal("TestUser", createdRecord.CreatedBy);
+            Assert.Equal("TestUser", createdRecord?.CreatedBy ?? string.Empty);
             
             // Verify Result
-            var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result.Result);
+            var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result);
             Assert.Equal("GetRecord", createdAtActionResult.ActionName);
             
             // Verify Logger called for Create Action
@@ -120,18 +131,18 @@ namespace PortModelApi.Tests
                 x => x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Creating record")),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Creating record")),
                     It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
 
              _mockLogger.Verify(
                 x => x.Log(
                     LogLevel.Error,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Failed to log audit")),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to log audit")),
                     It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>() ),
                 Times.Once);
         }
 
@@ -144,7 +155,7 @@ namespace PortModelApi.Tests
             );
             await context.SaveChangesAsync();
 
-            var controller = await CreateController(context);
+            var controller = CreateController(context);
             var update = new PortModelMapping { ModelName = "New" };
             
             var result = await controller.UpdateRecord("A1", new DateOnly(2024, 1, 1), update);
@@ -152,8 +163,8 @@ namespace PortModelApi.Tests
             Assert.IsType<NoContentResult>(result);
             
             var updatedRecord = await context.PortModelMappings.FindAsync("A1", new DateOnly(2024, 1, 1));
-            Assert.Equal("New", updatedRecord.ModelName);
-            Assert.Equal("TestUser", updatedRecord.UpdatedBy);
+            Assert.Equal("New", updatedRecord?.ModelName ?? string.Empty);
+            Assert.Equal("TestUser", updatedRecord?.UpdatedBy ?? string.Empty);
         }
 
         [Fact]
@@ -165,7 +176,7 @@ namespace PortModelApi.Tests
             );
             await context.SaveChangesAsync();
 
-            var controller = await CreateController(context);
+            var controller = CreateController(context);
             var result = await controller.DeleteRecord("A1", new DateOnly(2024, 1, 1));
 
             Assert.IsType<NoContentResult>(result);
@@ -178,5 +189,47 @@ namespace PortModelApi.Tests
             Assert.True(deletedRecord.IsDeleted);
             Assert.Equal("TestUser", deletedRecord.UpdatedBy);
         }
+
+        [Fact]
+        public async Task CreateRecord_AfterSoftDelete_RestoresRecord()
+        {
+            using var context = new AppDbContext(_dbContextOptions);
+            // Add initial record
+            context.PortModelMappings.Add(
+               new PortModelMapping { AccnoSleeve = "A5", EffectiveDate = new DateOnly(2024, 1, 1), ModelName = "Original" }
+            );
+            // Add required portfolio
+            context.Portfolios.Add(new PortModelApi.Models.Portfolio { Code = "A5", Name = "Test Portfolio" });
+            await context.SaveChangesAsync();
+
+            var controller = CreateController(context);
+            
+            // Delete (soft delete)
+            var deleteResult = await controller.DeleteRecord("A5", new DateOnly(2024, 1, 1));
+            Assert.IsType<NoContentResult>(deleteResult);
+            
+            // Verify record is not visible (soft deleted)
+            var notFoundResult = await controller.GetRecord("A5", new DateOnly(2024, 1, 1));
+            Assert.IsType<NotFoundResult>(notFoundResult.Result);
+            
+            // Create with same key should restore the soft-deleted record
+            var newRecord = new PortModelMapping
+            {
+                AccnoSleeve = "A5",
+                EffectiveDate = new DateOnly(2024, 1, 1),
+                ModelName = "Restored"
+            };
+            
+            var createResult = await controller.CreateRecord(newRecord);
+            var createdAtResult = Assert.IsType<CreatedAtActionResult>(createResult);
+            Assert.Equal("GetRecord", createdAtResult.ActionName);
+            
+            // Verify record is restored and visible
+            var restoredRecord = await context.PortModelMappings.FirstOrDefaultAsync(r => r.AccnoSleeve == "A5" && r.EffectiveDate == new DateOnly(2024, 1, 1));
+            Assert.NotNull(restoredRecord);
+            Assert.Equal("Restored", restoredRecord?.ModelName ?? string.Empty);
+            Assert.False(restoredRecord?.IsDeleted ?? true);
+        }
     }
 }
+

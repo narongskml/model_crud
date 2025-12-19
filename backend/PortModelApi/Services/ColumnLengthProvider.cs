@@ -1,12 +1,9 @@
 using PortModelApi.Data;
 using System.Collections.Concurrent;
-
 using System;
-using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using PortModelApi.Data;
 
 namespace PortModelApi.Services;
 

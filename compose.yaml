@@ -4,7 +4,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "5137:8080"
+      - "5137:8001"
+
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Server=host.containers.internal,1433;Database=PortModelDB;User Id=sa;Password=YourPassword123!;TrustServerCertificate=True;
@@ -19,7 +20,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "5173:3000"
+      - "5173:8000"
     environment:
       - ORIGIN=http://localhost:5173
       # In container, frontend talks to backend directly or via browser?
@@ -34,3 +35,7 @@ services:
 
 # Note: Keycloak and SQL Server are assumed to be running on the host 
 # or in another stack, hence host.containers.internal usage.
+
+volumes:
+  keycloak_data:
+    driver: local

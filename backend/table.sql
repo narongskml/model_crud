@@ -29,18 +29,20 @@ BEGIN
     CREATE TABLE [crd].[port_model_mapping](
         [accno_sleeve] [varchar](50) NOT NULL,
         [effectivedate] [date] NOT NULL,
-        [model_name] [varchar](50) NOT NULL,
+        [model_name] [nvarchar](100) NOT NULL,
         [currency_model] [varchar](1) NULL,
-        [hedge_model_name] [varchar](50) NULL,
+        [hedge_model_name] [nvarchar](100) NULL,
 
         -- Soft delete flag (your preference)
         [is_deleted] [bit] NOT NULL DEFAULT 0,
 
         -- Audit columns
-        [created_by] [nvarchar](100) NULL,
+        [created_by] [nvarchar](50) NULL,
         [created_at] [datetime2](7) NULL,
-        [updated_by] [nvarchar](100) NULL,
+        [updated_by] [nvarchar](50) NULL,
         [updated_at] [datetime2](7) NULL,
+        [deleted_by] [nvarchar](50) NULL,
+        [deleted_at] [datetime2](7) NULL,
 
         CONSTRAINT [PK_port_model_mapping] PRIMARY KEY CLUSTERED 
         (
@@ -69,7 +71,7 @@ IF NOT EXISTS (SELECT 1 FROM sys.columns
                AND Object_ID = Object_ID(N'[crd].[port_model_mapping]'))
 BEGIN
     ALTER TABLE [crd].[port_model_mapping] 
-    ADD [created_by] [nvarchar](100) NULL;
+    ADD [created_by] [nvarchar](50) NULL;
 END
 GO
 
@@ -87,7 +89,7 @@ IF NOT EXISTS (SELECT 1 FROM sys.columns
                AND Object_ID = Object_ID(N'[crd].[port_model_mapping]'))
 BEGIN
     ALTER TABLE [crd].[port_model_mapping] 
-    ADD [updated_by] [nvarchar](100) NULL;
+    ADD [updated_by] [nvarchar](50) NULL;
 END
 GO
 
@@ -97,6 +99,24 @@ IF NOT EXISTS (SELECT 1 FROM sys.columns
 BEGIN
     ALTER TABLE [crd].[port_model_mapping] 
     ADD [updated_at] [datetime2](7) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns 
+               WHERE Name = N'deleted_by' 
+               AND Object_ID = Object_ID(N'[crd].[port_model_mapping]'))
+BEGIN
+    ALTER TABLE [crd].[port_model_mapping] 
+    ADD [deleted_by] [nvarchar](50) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns 
+               WHERE Name = N'deleted_at' 
+               AND Object_ID = Object_ID(N'[crd].[port_model_mapping]'))
+BEGIN
+    ALTER TABLE [crd].[port_model_mapping] 
+    ADD [deleted_at] [datetime2](7) NULL;
 END
 GO
 
@@ -113,7 +133,7 @@ BEGIN
         [currency_model] [varchar](1) NULL,
         [hedge_model_name] [varchar](50) NULL,
         [action] [char](1) NOT NULL, -- 'I'=Insert, 'U'=Update, 'D'=Delete
-        [changed_by] [nvarchar](100) NOT NULL,
+        [changed_by] [nvarchar](50) NOT NULL,
         [changed_at] [datetime2](7) NOT NULL DEFAULT GETUTCDATE()
     ) ON [PRIMARY];
 END

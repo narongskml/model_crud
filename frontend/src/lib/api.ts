@@ -2,7 +2,7 @@ import type { PortModelMapping, PortModelMappingAudit, CreateResponse } from './
 import { get } from 'svelte/store';
 import { token } from './auth';
 
-const API_BASE = 'http://localhost:5137/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5137/api';
 
 function getHeaders() {
     const t = get(token);

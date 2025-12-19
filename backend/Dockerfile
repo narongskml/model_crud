@@ -18,6 +18,7 @@ EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
 
 COPY --from=build /app/publish .
+COPY --from=build /src/PortModelApi/appsettings*.json .
 
 # Drop to non-root user for security (best practice)
 USER app

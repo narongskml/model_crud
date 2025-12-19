@@ -4,6 +4,7 @@ using Microsoft.Data.SqlClient;
 using PortModelApi.Data;
 using PortModelApi.Models;
 using PortModelApi.Services;
+using System;
 using System.Reflection;
 
 namespace PortModelApi.Controllers;
@@ -16,17 +17,58 @@ public class PortModelMappingsController : ControllerBase
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<PortModelMappingsController> _logger;
     private readonly IColumnLengthProvider _columnLengthProvider;
+    private readonly TimeZoneInfo _configuredTimeZone;
 
     public PortModelMappingsController(
         AppDbContext context,
         IHttpContextAccessor httpContextAccessor,
         ILogger<PortModelMappingsController> logger,
-        IColumnLengthProvider columnLengthProvider)
+        IColumnLengthProvider columnLengthProvider,
+        Microsoft.Extensions.Configuration.IConfiguration configuration)
     {
         _context = context;
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
         _columnLengthProvider = columnLengthProvider;
+
+        // Resolve configured timezone (supports Windows and Linux ids, with fallback to UTC)
+        var tzId = configuration["AppSettings:TimeZone"];
+        _configuredTimeZone = ResolveTimeZone(tzId);
+    }
+
+    private static TimeZoneInfo ResolveTimeZone(string? tzId)
+    {
+        if (string.IsNullOrWhiteSpace(tzId)) return TimeZoneInfo.Utc;
+
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById(tzId);
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            // Try common alternate names for Bangkok
+            if (string.Equals(tzId, "SE Asia Standard Time", StringComparison.OrdinalIgnoreCase))
+            {
+                try { return TimeZoneInfo.FindSystemTimeZoneById("Asia/Bangkok"); } catch { }
+            }
+            if (string.Equals(tzId, "Asia/Bangkok", StringComparison.OrdinalIgnoreCase))
+            {
+                try { return TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"); } catch { }
+            }
+
+            return TimeZoneInfo.Utc;
+        }
+        catch (InvalidTimeZoneException)
+        {
+            return TimeZoneInfo.Utc;
+        }
+    }
+
+    private DateTime GetConfiguredNow()
+    {
+        var utcNow = DateTime.UtcNow;
+        var local = TimeZoneInfo.ConvertTimeFromUtc(utcNow, _configuredTimeZone);
+        return DateTime.SpecifyKind(local, DateTimeKind.Unspecified);
     }
 
     [HttpGet]
@@ -54,8 +96,38 @@ public class PortModelMappingsController : ControllerBase
         }
 
         var user = _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "system";
+        
+        // Check for soft-deleted record with same key; if exists, un-delete and reuse it
+        var existing = await _context.PortModelMappings.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(r => r.AccnoSleeve == record.AccnoSleeve && r.EffectiveDate == record.EffectiveDate);
+        
+        if (existing != null && existing.IsDeleted)
+        {
+            // Un-delete and update the existing soft-deleted record
+            _logger.LogInformation("Restoring soft-deleted record for {AccnoSleeve} on {EffectiveDate}", record.AccnoSleeve, record.EffectiveDate);
+            existing.ModelName = record.ModelName;
+            existing.CurrencyModel = record.CurrencyModel;
+            existing.HedgeModelName = record.HedgeModelName;
+            existing.IsDeleted = false;
+            existing.CreatedBy = user;
+            existing.CreatedAt = GetConfiguredNow();
+            
+            var warningsRestore = await TruncateStringPropertiesAsync(existing);
+            
+            await _context.SaveChangesAsync();
+            await LogAudit(existing, "I", user);
+            
+            var responseBody = new { record = existing, warnings = warningsRestore };
+            return CreatedAtAction(nameof(GetRecord), new { accno = existing.AccnoSleeve, date = existing.EffectiveDate }, responseBody);
+        }
+        else if (existing != null && !existing.IsDeleted)
+        {
+            // Active record already exists with this key
+            return Conflict(new { message = "Record already exists." });
+        }
+        
         record.CreatedBy = user;
-        record.CreatedAt = DateTime.UtcNow;
+        record.CreatedAt = GetConfiguredNow();
         record.IsDeleted = false;
 
         var warnings = await TruncateStringPropertiesAsync(record);
@@ -96,7 +168,7 @@ public class PortModelMappingsController : ControllerBase
         existing.CurrencyModel = update.CurrencyModel;
         existing.HedgeModelName = update.HedgeModelName;
         existing.UpdatedBy = user;
-        existing.UpdatedAt = DateTime.UtcNow;
+        existing.UpdatedAt = GetConfiguredNow();
 
         var warnings = await TruncateStringPropertiesAsync(existing);
 
@@ -118,8 +190,10 @@ public class PortModelMappingsController : ControllerBase
 
         var user = _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "system";
         record.IsDeleted = true;
+        record.DeletedBy = user;
+        record.DeletedAt = GetConfiguredNow();
         record.UpdatedBy = user;
-        record.UpdatedAt = DateTime.UtcNow;
+        record.UpdatedAt = GetConfiguredNow();
 
         await _context.SaveChangesAsync();
         await LogAudit(record, "D", user);
@@ -143,7 +217,7 @@ public class PortModelMappingsController : ControllerBase
                 record.HedgeModelName ?? (object)DBNull.Value,
                 action,
                 user,
-                DateTime.UtcNow);
+                GetConfiguredNow());
 
             _logger.LogInformation("Audit log created for action {Action}", action);
         }
