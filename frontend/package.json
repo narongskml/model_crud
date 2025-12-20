@@ -28,6 +28,8 @@
 		"vite": "^7.2.6"
 	},
 	"dependencies": {
+		"jspdf": "^3.0.4",
+		"jspdf-autotable": "^5.0.2",
 		"xlsx-js-style": "^1.2.0"
 	}
 }

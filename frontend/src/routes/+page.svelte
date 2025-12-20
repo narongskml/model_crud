@@ -18,6 +18,8 @@
     } from "lucide-svelte";
     import AuditLogModal from "$lib/components/AuditLogModal.svelte";
     import XLSX from "xlsx-js-style";
+    import { jsPDF } from "jspdf";
+    import autoTable from "jspdf-autotable";
 
     let mappings = $state<PortModelMapping[]>([]);
     let loading = $state(true);
@@ -132,6 +134,60 @@
         XLSX.writeFile(wb, "PortModelMappings.xlsx");
     }
 
+    function handleExportPDF() {
+        if (!mappings || mappings.length === 0) return;
+
+        const activeRecords = mappings.filter((m) => !m.isDeleted);
+        if (activeRecords.length === 0) {
+            alert("No active records to export.");
+            return;
+        }
+
+        const doc = new jsPDF();
+
+        // Add Header
+        doc.setFontSize(18);
+        doc.text("Port Model Mappings", 14, 22);
+        doc.setFontSize(11);
+        doc.setTextColor(100);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+
+        const tableData = activeRecords.map((m) => [
+            m.accnoSleeve,
+            new Date(m.effectiveDate).toLocaleDateString(),
+            m.modelName,
+            m.currencyModel === "A" ? "Asset" : "Security",
+            m.hedgeModelName || "-",
+        ]);
+
+        autoTable(doc, {
+            startY: 40,
+            head: [
+                [
+                    "Account Sleeve",
+                    "Effective Date",
+                    "Model Name",
+                    "Currency",
+                    "Hedge Model",
+                ],
+            ],
+            body: tableData,
+            theme: "grid",
+            headStyles: {
+                fillColor: [59, 130, 246], // Tailwind blue-600
+                textColor: [255, 255, 255],
+                fontSize: 10,
+                fontStyle: "bold",
+            },
+            alternateRowStyles: {
+                fillColor: [243, 244, 246], // Tailwind gray-100
+            },
+            margin: { top: 40 },
+        });
+
+        doc.save("PortModelMappings.pdf");
+    }
+
     async function handleImport(event: Event) {
         const input = event.target as HTMLInputElement;
         if (!input.files || input.files.length === 0) return;
@@ -211,6 +267,30 @@
             title="Export Excel"
         >
             <Download size={20} />
+        </button>
+
+        <button
+            onclick={handleExportPDF}
+            class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            title="Export PDF"
+        >
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="lucide lucide-file-text"
+                ><path
+                    d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"
+                /><path d="M14 2v4a2 2 0 0 0 2 2h4" /><path d="M10 9H8" /><path
+                    d="M16 13H8"
+                /><path d="M16 17H8" /></svg
+            >
         </button>
 
         {#if isManager}

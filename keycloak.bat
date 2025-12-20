@@ -8,4 +8,4 @@ podman run -d ^
   -v keycloak_data:/opt/keycloak/data ^
   -p 8080:8080 ^
   quay.io/keycloak/keycloak:26.4.6 ^
-  start-dev
+  start-de
