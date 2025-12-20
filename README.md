@@ -133,12 +133,13 @@ model_crud/
 
 ## Features
 
-### 1. **Portfolio Security Model Management**
+### 1. **Portfolio Model Management**
 - **Create**: Define new security models for a portfolio with:
   - Portfolio Account Number
   - Model effective date
-  - Security allocations and weightings
-  - Model description
+  - Security Model or Hedging Model
+  - Model Name
+  - Hedging Model Name
   
 - **Read**: View all assigned models with filters:
   - Search by portfolio account
@@ -154,23 +155,17 @@ model_crud/
   - Soft delete with audit trail
   - Historical tracking
 
-### 2. **Portfolio Currency Hedging Model Management**
-- Define hedging strategies by currency pair
-- Manage hedge ratios and allocations
-- Track multiple hedging models per portfolio
-- Version control with effective dates
-
-### 3. **Excel Integration & Portability**
+### 2. **Excel Integration & Portability**
 - **Bulk Import**: Quickly upload model definitions from Excel templates.
 - **Data Export**: Export current model listings and audit trails directly to `.xlsx` format for reporting or offline analysis.
 - **Template-Based**: Ensures data consistency through standardized Excel structures.
 
-### 4. **Aesthetics & Accessibility**
+### 3. **Aesthetics & Accessibility**
 - **Dark Mode**: Fully supports native dark mode for reduced eye strain.
 - **Dynamic Font Sizing**: User-adjustable font sizes for better readability across different displays.
 - **Premium UI**: Modern, glassmorphism-inspired design with smooth transitions.
 
-### 5. **Audit Trail & Compliance**
+### 4. **Audit Trail & Compliance**
 - **Automatic logging** of all changes:
   - Who made the change (User ID)
   - When it was made (Timestamp)
@@ -182,7 +177,7 @@ model_crud/
   - Immutable historical records
   - Regulatory reporting support
 
-### 6. **Security & Authentication**
+### 5. **Security & Authentication**
 - **Keycloak Integration** (OAuth 2.0 / OpenID Connect):
   - Centralized user management
   - Role-based access control (RBAC)
@@ -194,7 +189,7 @@ model_crud/
   - Token-based authorization on all endpoints
   - Automatic token refresh
 
-### 7. **User-Friendly Interface**
+### 6. **User-Friendly Interface**
 - Dashboard with model overview
 - Inline create/edit forms
 - Responsive design (mobile-friendly)
