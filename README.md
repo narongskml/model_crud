@@ -155,9 +155,10 @@ model_crud/
   - Soft delete with audit trail
   - Historical tracking
 
-### 2. **Excel Integration & Portability**
+### 2. **Data Portability & Export Options**
 - **Bulk Import**: Quickly upload model definitions from Excel templates.
-- **Data Export**: Export current model listings and audit trails directly to `.xlsx` format for reporting or offline analysis.
+- **Excel Export**: Export current model listings and audit trails directly to `.xlsx` format for reporting or offline analysis.
+- **PDF Export**: Generate high-quality PDF reports of portfolio mappings for distribution and record-keeping.
 - **Template-Based**: Ensures data consistency through standardized Excel structures.
 
 ### 3. **Aesthetics & Accessibility**
@@ -218,6 +219,7 @@ model_crud/
 ### Data Operations
 ![Import Excel](screen_shot_import_Excel.jpg)
 ![Export Excel](screen_shot_export_Excel.jpg)
+*PDF Export support also available via the dashboard.*
 
 ---
 
@@ -537,4 +539,4 @@ API_URL=http://api:5137
 ---
 
 **Version**: 1.0  
-**Last Updated**: December 2025
+**Last Updated**: December 22, 2025

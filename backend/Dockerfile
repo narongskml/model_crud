@@ -15,6 +15,12 @@ RUN dotnet publish "PortModelApi.csproj" -c Release -o /app/publish /p:UseAppHos
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine
 WORKDIR /app
 EXPOSE 8080
+
+# Install ICU libraries for globalization support
+# Microsoft.Data.SqlClient requires these libraries on Alpine
+RUN apk add --no-cache icu-libs
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+
 ENV ASPNETCORE_URLS=http://+:8080
 
 COPY --from=build /app/publish .

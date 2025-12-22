@@ -1,27 +1,32 @@
 # Build Stage
-FROM node:20-alpine AS build
+FROM oven/bun:alpine AS build
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
 
 COPY . .
-RUN npm run build
-RUN npm prune --production
+RUN bun run build
+
+# Production Dependencies Stage
+FROM oven/bun:alpine AS prod-deps
+WORKDIR /app
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile --production
 
 # Runtime Stage
-FROM node:20-alpine
+FROM oven/bun:alpine
 WORKDIR /app
 
-# Copy built assets and production deps
+# Copy built assets and only production deps
 COPY --from=build /app/build ./build
-COPY --from=build /app/package.json ./package.json
-COPY --from=build /app/node_modules ./node_modules
+COPY --from=prod-deps /app/node_modules ./node_modules
+COPY --from=prod-deps /app/package.json ./package.json
 
 EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
-# Allow connection to backend
 ENV ORIGIN=http://localhost:3000
 
-CMD ["node", "build"]
+# Run with Bun
+CMD ["bun", "run", "build/index.js"]

@@ -6,7 +6,8 @@ A modern, user-friendly frontend application for managing Port Model Mappings. B
 
 -   **Dashboard View**: View all port model mappings in a responsive table.
 -   **Search & Filter**: Real-time filtering by Account Sleeve or Model Name.
--   **Excel Portability**: Export current mappings to Excel or bulk import from standardized templates.
+-   **Excel & PDF Export**: Export current mappings to Excel or high-quality PDF formats.
+-   **Bulk Import**: Quickly upload model definitions from standardized Excel templates.
 -   **Create Mapping**: Form to create new portfolio assignments with validation.
 -   **Edit Mapping**: Update existing mappings (primary keys are immutable).
 -   **Audit History**: View a history of changes for each record.
@@ -56,19 +57,19 @@ Each row in the table represents a mapping.
 ## Development
 
 ### Prerequisites
--   Node.js (v20 or higher recommended)
--   npm
+-   Bun (v1.1.x or higher)
+-   Node.js (Optional fallback)
 
 ### Installation
 Install the project dependencies:
 ```bash
-npm install
+bun install
 ```
 
 ### Running Locally
 Start the development server with hot-reload:
 ```bash
-npm run dev
+bun run dev
 ```
 The app will be available at `http://localhost:5173`.
 
@@ -83,7 +84,7 @@ npm run check
 ### Building the App
 Create a production build:
 ```bash
-npm run build
+bun run build
 ```
 The output will be in the `build/` directory.
 
@@ -96,9 +97,13 @@ npm run preview
 ## Docker
 
 ### Build Container
-Build the Docker image:
+Build the image using Podman or Docker:
 ```bash
-docker build -t frontend .
+podman build -t model_crud_frontend:bun .
+```
+or
+```bash
+docker build -t model_crud_frontend:bun .
 ```
 
 ### Run Container
