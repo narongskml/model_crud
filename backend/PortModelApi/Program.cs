@@ -2,7 +2,9 @@ using PortModelApi.Data;
 using Microsoft.EntityFrameworkCore;
 using PortModelApi.Services;
 using Polly;
-using Polly.CircuitBreaker;
+using PortModelApi.Models;
+using Microsoft.Extensions.Options;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,7 +49,30 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddControllers();
+// http client config
+builder.Services.Configure<HttpClientOptions>(
+    builder.Configuration.GetSection("HttpClientOptions"));
 
+builder.Services.AddHttpClient("KeycloakClient")
+    .ConfigurePrimaryHttpMessageHandler(sp =>
+    {
+        var options = sp.GetRequiredService<IOptions<HttpClientOptions>>().Value;
+
+        var handler = new HttpClientHandler
+        {
+            UseProxy = options.UseProxy
+        };
+
+        if (options.UseProxy && !string.IsNullOrEmpty(options.ProxyUrl))
+        {
+            handler.Proxy = new WebProxy(options.ProxyUrl)
+            {
+                BypassProxyOnLocal = options.BypassOnLocal
+            };
+        }
+
+        return handler;
+    });
 // Add Authentication (Keycloak)
 builder.Services.AddAuthentication().AddJwtBearer(options =>
 {

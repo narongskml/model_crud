@@ -93,7 +93,7 @@ public class PortModelMappingsController : ControllerBase
         // Validate Portfolio
         if (!await _context.Portfolios.AnyAsync(p => p.Code == record.AccnoSleeve))
         {
-            return BadRequest(new { message = $"Portfolio '{record.AccnoSleeve}' does not exist in 'dro.Portfolio'." });
+            return BadRequest(new { message = $"Portfolio '{record.AccnoSleeve}' does not exist in 'dro.vPortfolio'." });
         }
 
 
@@ -227,7 +227,12 @@ public class PortModelMappingsController : ControllerBase
             var worksheet = workbook.Worksheets.FirstOrDefault();
             if (worksheet == null) return BadRequest(new { message = "Workspace is empty." });
 
-            var rows = worksheet.RangeUsed().RowsUsed().Skip(1); // Skip header row
+            var usedRange = worksheet.RangeUsed();
+            if (usedRange is null)
+            {
+                return BadRequest(new { message = "Worksheet has no data." });
+            }
+            var rows = usedRange.RowsUsed().Skip(1); // Skip header row
             int totalRows = 0;
             int createdCount = 0;
             int updatedCount = 0;

@@ -13,10 +13,12 @@ public class AuthController : ControllerBase
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<AuthController> _logger;
+    private readonly HttpClient _client;
 
-    public AuthController(IConfiguration configuration, ILogger<AuthController> logger)
+    public AuthController(IConfiguration configuration, ILogger<AuthController> logger, IHttpClientFactory factory)
     {
         _configuration = configuration;
+        _client = factory.CreateClient("KeycloakClient");
         _logger = logger;
     }
 
@@ -31,8 +33,8 @@ public class AuthController : ControllerBase
 
         try
         {
-            using var client = new HttpClient();
-            var keycloakUrl = $"{_configuration["Keycloak:Authority"]}/protocol/openid-connect/token";
+            
+             var keycloakUrl = $"{_configuration["Keycloak:Authority"]}/protocol/openid-connect/token";
             
             var content = new FormUrlEncodedContent(new[]
             {
@@ -43,7 +45,7 @@ public class AuthController : ControllerBase
                 new KeyValuePair<string, string>("password", request.Password)
             });
 
-            var response = await client.PostAsync(keycloakUrl, content);
+            var response = await _client.PostAsync(keycloakUrl, content);
             var responseString = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
