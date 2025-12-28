@@ -19,6 +19,8 @@ EXPOSE 8080
 # Install ICU libraries for globalization support
 # Microsoft.Data.SqlClient requires these libraries on Alpine
 RUN apk add --no-cache icu-libs
+# Proactive fix for older SQL Server versions (allows lower TLS versions)
+RUN sed -i 's/SECLEVEL=2/SECLEVEL=1/g' /etc/ssl/openssl.cnf
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 
 ENV ASPNETCORE_URLS=http://+:8080
